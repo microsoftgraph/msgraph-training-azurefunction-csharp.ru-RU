@@ -1,30 +1,30 @@
 ---
-ms.openlocfilehash: 003d7f382a0c950d31bb84176feb1e83fbd5cf19
-ms.sourcegitcommit: 57a5c2e1a562d8af092a3e78786d711ce1e8f9cb
+ms.openlocfilehash: 17c93f353c84ea2db28cd2e0203d30c5f320e36e
+ms.sourcegitcommit: 141fe5c30dea84029ef61cf82558c35f2a744b65
 ms.translationtype: MT
 ms.contentlocale: ru-RU
-ms.lasthandoff: 10/30/2020
-ms.locfileid: "48822698"
+ms.lasthandoff: 12/11/2020
+ms.locfileid: "49655235"
 ---
 <!-- markdownlint-disable MD002 MD041 -->
 
-В этом руководстве показано, как создать простую функцию Azure, которая реализует функции триггера HTTP, вызывающие Microsoft Graph. Эти функции будут охватывать следующие сценарии:
+В этом руководстве вы создадим простую функцию Azure, которая реализует функции триггера HTTP, которые вызывают Microsoft Graph. Эти функции охватывают следующие сценарии:
 
-- Реализует API для доступа к папке "Входящие" пользователя с помощью проверки подлинности " [от имени](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-on-behalf-of-flow) ".
-- Реализует API для подписки и отмены подписки на уведомления в папке "Входящие" пользователя, используя [учетные данные клиента, предоставляют](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow) проверку подлинности с помощью клиента.
-- Реализует веб-перехватчик для получения [уведомлений об изменениях](https://docs.microsoft.com/graph/webhooks) от Microsoft Graph и доступа к данным с помощью потоки предоставления учетных данных клиента.
+- Реализует API для доступа к почтовому [](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-on-behalf-of-flow) ящику пользователя с помощью проверки подлинности потока "от имени".
+- Реализует API для подписки на уведомления в почтовом ящике пользователя и [](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow) отписаться от них, используя проверку подлинности потока предоставления учетных данных клиента.
+- Реализует веб-hook для [](https://docs.microsoft.com/graph/webhooks) получения уведомлений об изменениях из Microsoft Graph и доступа к данным с помощью потока предоставления учетных данных клиента.
 
-Кроме того, вы создадите простое одностраничное приложение JavaScript (SPA), чтобы вызвать API, реализованные в функции Azure.
+Вы также создадим простое одно page application JavaScript (SPA) для вызова API, реализованных в функции Azure.
 
 ## <a name="create-azure-functions-project"></a>Создание проекта функций Azure
 
-1. Откройте интерфейс командной строки (CLI) в каталоге, в котором нужно создать проект. Выполните следующую команду.
+1. Откройте интерфейс командной строки (CLI) в каталоге, где нужно создать проект. Выполните следующую команду.
 
     ```Shell
     func init GraphTutorial --dotnet
     ```
 
-1. Измените текущий каталог в CLI на каталог **графтуториал** и выполните следующие команды, чтобы создать три функции в проекте.
+1. Измените текущий каталог в CLI на **каталог GraphTutorial** и запустите следующие команды, чтобы создать три функции в проекте.
 
     ```Shell
     func new --name GetMyNewestMessage --template "HTTP trigger" --language C#
@@ -32,7 +32,7 @@ ms.locfileid: "48822698"
     func new --name Notify --template "HTTP trigger" --language C#
     ```
 
-1. Откройте **local.settings.js** и добавьте в файл следующую команду, чтобы разрешить CORS с `http://localhost:8080` URL-адреса для тестового приложения.
+1. Откройте **local.settings.jsи** добавьте в файл следующее, чтобы разрешить CORS с `http://localhost:8080` URL-адреса тестового приложения.
 
     ```json
     "Host": {
@@ -40,7 +40,7 @@ ms.locfileid: "48822698"
     }
     ```
 
-1. Выполните следующую команду, чтобы запустить проект локально.
+1. Чтобы запустить проект локально, запустите следующую команду:
 
     ```Shell
     func start
@@ -58,66 +58,66 @@ ms.locfileid: "48822698"
         SetSubscription: [GET,POST] http://localhost:7071/api/SetSubscription
     ```
 
-1. Убедитесь, что функции работают правильно, открыв браузер и просмотрев URL-адреса функций, показанные в выходных данных. В браузере должно появиться следующее сообщение: `This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.` .
+1. Убедитесь, что функции работают правильно, открыв браузер и открыв URL-адреса функций, показанные в выходных данных. В браузере должно отобраться следующее `This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.` сообщение:
 
-## <a name="create-single-page-application"></a>Создание одностраничного приложения
+## <a name="create-single-page-application"></a>Создание одно page application
 
-1. Откройте подсистему CLI в каталоге, в котором необходимо создать проект. Создайте каталог с именем **тестклиент** для хранения файлов HTML и JavaScript.
+1. Откройте CLI в каталоге, в котором вы хотите создать проект. Создайте каталог с **именем TestClient** для удержания файлов HTML и JavaScript.
 
-1. Создайте новый файл с именем **index.html** в каталоге **тестклиент** и добавьте следующий код.
+1. Создайте файл с **именемindex.html** в **каталоге TestClient** и добавьте следующий код.
 
     :::code language="html" source="../demo/TestClient/index.html" id="indexSnippet":::
 
-    Этот параметр определяет базовую структуру приложения, в том числе панель навигации. Кроме того, добавляются следующие компоненты:
+    Это определяет базовый макет приложения, включая панели навигации. Он также добавляет следующее:
 
-    - [Начальная](https://getbootstrap.com/) Загрузка и поддерживающая JavaScript
-    - [фонтавесоме](https://fontawesome.com/)
-    - [Библиотека проверки подлинности (Майкрософт) для JavaScript (MSAL.js) 2,0](https://github.com/AzureAD/microsoft-authentication-library-for-js/tree/dev/lib/msal-browser)
+    - [Bootstrap и](https://getbootstrap.com/) поддерживаемый JavaScript
+    - [FontAwesome](https://fontawesome.com/)
+    - [Библиотека проверки подлинности Майкрософт для JavaScript (MSAL.js) 2.0](https://github.com/AzureAD/microsoft-authentication-library-for-js/tree/dev/lib/msal-browser)
 
     > [!TIP]
-    > Страница содержит фавикон ( `<link rel="shortcut icon" href="g-raph.png">` ). Вы можете удалить эту строку или скачать файл **g-raph.png** из [GitHub](https://github.com/microsoftgraph/g-raph).
+    > Страница включает в себя факс, ( `<link rel="shortcut icon" href="g-raph.png">` ). Эту строку можно удалить или скачатьg-raph.png **с** [GitHub.](https://github.com/microsoftgraph/g-raph)
 
-1. Создайте новый файл с именем **Style. CSS** в каталоге **тестклиент** и добавьте приведенный ниже код.
+1. Создайте файл **style.css** в **каталоге TestClient** и добавьте следующий код.
 
     :::code language="css" source="../demo/TestClient/style.css":::
 
-1. Создайте новый файл с именем **ui.js** в каталоге **тестклиент** и добавьте следующий код.
+1. Создайте файл с **именемui.js** в **каталоге TestClient** и добавьте следующий код.
 
     :::code language="javascript" source="../demo/TestClient/ui.js" id="uiJsSnippet":::
 
     Этот код использует JavaScript для отображения текущей страницы на основе выбранного представления.
 
-### <a name="test-the-single-page-application"></a>Тестирование одностраничного приложения
+### <a name="test-the-single-page-application"></a>Тестирование однобукв 2-странигового приложения
 
 > [!NOTE]
-> В этом разделе приведены инструкции по использованию [DotNet-обслуживает](https://github.com/natemcmaster/dotnet-serve) для запуска простого тестового HTTP-сервера на компьютере для разработки. Использование этого конкретного средства не является обязательным. Вы можете использовать любой тестовый сервер, который вы предпочитаете обслуживать каталог **тестклиент** .
+> В этом разделе содержатся инструкции по использованию [dotnet-serve](https://github.com/natemcmaster/dotnet-serve) для запуска простого тестового HTTP-сервера на компьютере разработки. Использовать это средство не требуется. Можно использовать любой тестовый сервер, который вы предпочитаете обслуживать **каталог TestClient.**
 
-1. Выполните следующую команду в командной панели управления для установки **DotNet — обслуживает**.
+1. Чтобы установить **dotnet-serve,** запустите следующую команду в CLI.
 
     ```Shell
     dotnet tool install --global dotnet-serve
     ```
 
-1. Измените текущий каталог в CLI на каталог **тестклиент** и выполните следующую команду, чтобы запустить HTTP-сервер.
+1. Измените текущий каталог в CLI на **каталог TestClient** и запустите следующую команду, чтобы запустить HTTP-сервер.
 
     ```Shell
-    dotnet serve -h "Cache-Control: no-cache, no-store, must-revalidate"
+    dotnet serve -h "Cache-Control: no-cache, no-store, must-revalidate" -p 8080
     ```
 
-1. Откройте браузер и перейдите по адресу `http://localhost:8080`. Страница должна отображаться, но ни одна из кнопок в настоящее время не работает.
+1. Откройте браузер и перейдите по адресу `http://localhost:8080`. Страница должна отрисовки, но в настоящее время ни одна из кнопок не работает.
 
 ## <a name="add-nuget-packages"></a>Добавление пакетов NuGet
 
-Прежде чем переходить, установите некоторые дополнительные пакеты NuGet, которые будут использоваться позже.
+Прежде чем двигаться дальше, установите некоторые дополнительные пакеты NuGet, которые вы будете использовать позже.
 
-- [Microsoft. Azure. functions. Extensions](https://www.nuget.org/packages/Microsoft.Azure.Functions.Extensions) для включения внедрения зависимостей в проект функций Azure.
-- [Microsoft.Extensions.Configуратион. Усерсекретс](https://www.nuget.org/packages/Microsoft.Extensions.Configuration.UserSecrets) чтение конфигурации приложения из [хранилища секретов для разработки .NET](https://docs.microsoft.com/aspnet/core/security/app-secrets).
-- [Microsoft. Graph](https://www.nuget.org/packages/Microsoft.Graph/) для совершения звонков в Microsoft Graph.
-- [Microsoft. Identity. Client](https://www.nuget.org/packages/Microsoft.Identity.Client/) для проверки подлинности и управления маркерами.
-- [Microsoft. IdentityModel. Protocols. опенидконнект](https://www.nuget.org/packages/Microsoft.IdentityModel.Protocols.OpenIdConnect) для получения конфигурации OpenID для проверки маркера.
-- [System. IdentityModel. tokens. JWT](https://www.nuget.org/packages/System.IdentityModel.Tokens.Jwt) для проверки маркеров, отправляемых в веб-API.
+- [Microsoft.Azure.Functions.Extensions](https://www.nuget.org/packages/Microsoft.Azure.Functions.Extensions) для вреализации зависимостей в проекте функций Azure.
+- [Microsoft.Extensions.Configuration. UserSecrets](https://www.nuget.org/packages/Microsoft.Extensions.Configuration.UserSecrets) для чтения конфигурации приложения из секретного магазина [разработки .NET.](https://docs.microsoft.com/aspnet/core/security/app-secrets)
+- [Microsoft.Graph](https://www.nuget.org/packages/Microsoft.Graph/) для звонков в Microsoft Graph.
+- [Microsoft.Identity.Client](https://www.nuget.org/packages/Microsoft.Identity.Client/) для проверки подлинности и управления маркерами.
+- [Microsoft.IdentityModel.Protocols.OpenIdConnect](https://www.nuget.org/packages/Microsoft.IdentityModel.Protocols.OpenIdConnect) для ирисовки конфигурации OpenID для проверки маркеров.
+- [System.IdentityModel.Tokens.Jwt](https://www.nuget.org/packages/System.IdentityModel.Tokens.Jwt) для проверки маркеров, отправленных в веб-API.
 
-1. Измените текущий каталог в CLI на каталог **графтуториал** и выполните следующие команды.
+1. Измените текущий каталог в CLI на **каталог GraphTutorial** и запустите следующие команды.
 
     ```Shell
     dotnet add package Microsoft.Azure.Functions.Extensions --version 1.0.0
